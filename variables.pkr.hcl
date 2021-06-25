@@ -10,12 +10,10 @@ variable "headless" {
 
 variable "iso_checksum" {
   type    = string
-  default = "sha1:09c1ce7dfc548f18291ec7b080b57301a476e63b"
 }
 
 variable "iso_url" {
   type    = string
-  default = "http://www.gtlib.gatech.edu/pub/archlinux/iso/2021.05.01/archlinux-2021.05.01-x86_64.iso"
 }
 
 variable "ssh_timeout" {
