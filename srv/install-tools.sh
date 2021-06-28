@@ -5,5 +5,4 @@ echo ${MIRROR} > /etc/pacman.d/mirrorlist
 
 /usr/bin/pacman -Sy
 /usr/bin/pacman -S --noconfirm open-vm-tools
-/usr/bin/systemctl enable vmtoolsd.service
 /usr/bin/systemctl start vmtoolsd.service
