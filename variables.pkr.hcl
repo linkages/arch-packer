@@ -3,6 +3,11 @@ variable "country" {
   default = "US"
 }
 
+variable "use_local_mirror" {
+  type = string
+  default = "1"
+}
+
 variable "headless" {
   type    = string
   default = "false"

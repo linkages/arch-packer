@@ -70,10 +70,17 @@ build {
   provisioner "shell" {
     environment_vars = [
       "COUNTRY=${var.country}",
+      "use_local_mirror=${var.use_local_mirror}"
     ]
     execute_command   = "{{ .Vars }} sudo -E -S bash '{{ .Path }}'"
-    expect_disconnect = true
     script            = "scripts/install-base.sh"
+  }
+
+  provisioner "shell" {
+    inline = ["sudo /usr/bin/systemctl reboot"]
+    expect_disconnect = true
+    pause_after = "30s"
+    skip_clean = true
   }
 
   provisioner "shell" {

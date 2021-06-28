@@ -19,8 +19,7 @@ CONFIG_SCRIPT='/usr/local/bin/arch-config.sh'
 ROOT_PARTITION="${DISK}1"
 TARGET_DIR='/mnt'
 COUNTRY=${COUNTRY:-US}
-MIRROR="Server = http://docker-2.benshoshan.com:8888/\$repo/os/\$arch"
-MIRRORLIST="https://archlinux.org/mirrorlist/?country=${COUNTRY}&protocol=http&protocol=https&ip_version=4&use_mirror_status=on"
+#MIRROR=${USERMIRROR:-"http://www.gtlib.gatech.edu/pub/archlinux/\$repo/os/\$arch"}
 
 echo ">>>> install-base.sh: Clearing partition table on ${DISK}.."
 echo ">>>> install-base.sh: Clearing partition table on ${DISK}.." >> /tmp/install.log
@@ -67,7 +66,25 @@ for fs in opt home usr var; do
 done
 
 echo ">>>> install-base.sh: Setting pacman ${COUNTRY} mirrors.."
-echo ${MIRROR} > /etc/pacman.d/mirrorlist
+
+# test to see if use_local_mirror is set
+if [ ! -z ${use_local_mirror} ]; then
+    # if it is set and set to "1" then use the local mirror
+    if [ ${use_local_mirror} == "1" ]; then
+	echo "using local";
+	MIRROR="http://docker-2.benshoshan.com:8888/\$repo/os/\$arch"
+    # otherwise use the remote mirror
+    else
+	echo "using remote";
+	MIRROR="http://www.gtlib.gatech.edu/pub/archlinux/\$repo/os/\$arch"
+   fi
+# if use_local_mirror is not set, then use the remote
+else
+    echo "use_local_mirror not found. Setting to remote"
+    MIRROR="http://www.gtlib.gatech.edu/pub/archlinux/\$repo/os/\$arch"
+fi
+
+echo "Server = ${MIRROR}"> /etc/pacman.d/mirrorlist
 
 echo ">>>> install-base.sh: Bootstrapping the base installation.."
 /usr/bin/pacstrap ${TARGET_DIR} base base-devel linux
@@ -75,7 +92,7 @@ echo ">>>> install-base.sh: Bootstrapping the base installation.."
 # Need to install netctl as well: https://github.com/archlinux/arch-boxes/issues/70
 # Can be removed when Vagrant's Arch plugin will use systemd-networkd: https://github.com/hashicorp/vagrant/pull/11400
 echo ">>>> install-base.sh: Installing basic packages.."
-/usr/bin/arch-chroot ${TARGET_DIR} pacman -S --noconfirm gptfdisk openssh lvm2 grub dhcpcd netctl
+/usr/bin/arch-chroot ${TARGET_DIR} pacman -S --noconfirm gptfdisk openssh lvm2 grub dhcpcd netctl net-tools
 
 echo ">>>> install-base.sh: Configuring grub.."
 /usr/bin/arch-chroot ${TARGET_DIR} grub-install --target=i386-pc ${DISK}
@@ -99,7 +116,7 @@ cat <<-EOF > "${TARGET_DIR}${CONFIG_SCRIPT}"
 
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Fixing mkinitcpio.conf.."
   /usr/bin/sed -i 's#udev#systemd#' /etc/mkinitcpio.conf
-  /usr/bin/sed -i 's#block#block sd-lvm2#' /etc/mkinitcpio.conf
+  /usr/bin/sed -i 's#block#block lvm2#' /etc/mkinitcpio.conf
 
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Creating initramfs.."
   /usr/bin/mkinitcpio -p linux
@@ -123,8 +140,16 @@ cat <<-EOF > "${TARGET_DIR}${CONFIG_SCRIPT}"
   echo 'archie ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/10_archie
   /usr/bin/chmod 0440 /etc/sudoers.d/10_archie
 
+  echo "Getting the status of the archie user before"
+  /usr/bin/passwd -S archie
+
+  echo "archie:archieIsRoot!" | /usr/bin/chpasswd 
+
+  echo "Getting the status of the archie user after"
+  /usr/bin/passwd -S archie
+
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Installing Open-VM-Tools and NFS utilities.."
-  /usr/bin/pacman -S --noconfirm linux-headers open-vm-tools nfs-utils cloud-init cloud-guest-utils
+  /usr/bin/pacman -S --noconfirm linux-headers open-vm-tools nfs-utils cloud-init cloud-guest-utils net-tools
 
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Enabling Open-VM-Tools service.."
   /usr/bin/systemctl enable vmtoolsd.service
@@ -179,9 +204,11 @@ echo ">>>> install-base.sh: unmounting: slash"
 
 # Turning network interfaces down to make sure SSH session was dropped on host.
 # More info at: https://www.packer.io/docs/provisioners/shell.html#handling-reboots
-echo '==> Turning down network interfaces and rebooting'
-for i in $(/usr/bin/netstat -i | /usr/bin/tail +3 | /usr/bin/awk '{print $1}'); do
-    /usr/bin/ip link set ${i} down;
-done
-/usr/bin/systemctl reboot
+#echo '==> Turning down network interfaces and rebooting'
+#for i in $(/usr/bin/ip link show | /usr/bin/grep ^.: | /usr/bin/awk '{print $2}' | /usr/bin/sed -e 's#:##g'); do
+#    echo "Turning down: ${i}";
+#    /usr/bin/ip link set ${i} down;
+#done
+#/usr/bin/systemctl reboot
 echo ">>>> install-base.sh: Installation complete!"
+exit 0
