@@ -157,12 +157,6 @@ cat <<-EOF > "${TARGET_DIR}${CONFIG_SCRIPT}"
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Enabling RPC Bind service.."
   /usr/bin/systemctl enable rpcbind.service
 
-  echo ">>>> ${CONFIG_SCRIPT_SHORT}: Configuring cloud-init services.."
-  echo "datasource_list: [ NoCloud, ConfigDrive, OpenNebula, Azure, AltCloud, OVF, MAAS, GCE, OpenStack, CloudSigma, None ]" >> /etc/cloud/cloud.cfg
-
-  echo ">>>> ${CONFIG_SCRIPT_SHORT}: Installing cloud-init-vmware-guestinfo data source.."
-  /usr/bin/curl -sSL https://raw.githubusercontent.com/vmware/cloud-init-vmware-guestinfo/master/install.sh | sh -
-
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Enabling cloud-init services.."
   /usr/bin/systemctl enable cloud-init-local.service 
   /usr/bin/systemctl enable cloud-init.service
