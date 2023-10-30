@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PASSWORD=$(/usr/bin/openssl passwd -crypt 'archieIsRoot!')
+PASSWORD=$(/usr/bin/openssl passwd -6 'archieIsRoot!')
 
 # Vagrant-specific configuration
 /usr/bin/useradd --password ${PASSWORD} --comment 'Archie install user' --create-home --user-group archie
