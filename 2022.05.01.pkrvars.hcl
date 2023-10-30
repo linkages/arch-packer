@@ -13,9 +13,6 @@ iso_checksum = "sha1:3700a16d4fcabbd29e9a7fbc97da732c4577dc2a"
 use_local_mirror = "1"
 
 # Build
-ssh_username   = "archie"
-ssh_password   = "archieIsRoot!"
-http_directory = "./srv"
 boot_command     = [
   "<enter><wait10><wait10><wait10>",
   "/usr/bin/curl -O http://{{ .HTTPIP }}:{{ .HTTPPort }}/enable-ssh.sh<enter><wait5>",
