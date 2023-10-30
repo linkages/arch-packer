@@ -33,12 +33,12 @@ source "vsphere-iso" "arch" {
   folder               = "${var.vcenter_folder}"
   guest_os_type        = "${var.guest_os_type}"
   #  cluster              = "${var.vcenter_cluster}"
-  host                 = "${var.vcenter_host}"
-  http_directory       = "${var.http_directory}"
-  insecure_connection  = "${var.vcenter_ignore_ssl}"
-  iso_url              = "${var.iso_url}"
-  iso_checksum         = "${var.iso_checksum}"
-  
+  host                = "${var.vcenter_host}"
+  http_directory      = "${var.http_directory}"
+  insecure_connection = "${var.vcenter_ignore_ssl}"
+  iso_url             = "${var.iso_url}"
+  iso_checksum        = "${var.iso_checksum}"
+
   network_adapters {
     network      = "${var.network}"
     network_card = "vmxnet3"
@@ -64,23 +64,24 @@ source "vsphere-iso" "arch" {
 }
 
 build {
-  name = "arch-vsphere-iso"
-  sources = [ "source.vsphere-iso.arch" ]
+  name    = "arch-vsphere-iso"
+  sources = ["source.vsphere-iso.arch"]
 
   provisioner "shell" {
     environment_vars = [
       "COUNTRY=${var.country}",
-      "use_local_mirror=${var.use_local_mirror}"
+      "use_local_mirror=${var.use_local_mirror}",
+      "password=${var.ssh_password}"
     ]
-    execute_command   = "{{ .Vars }} sudo -E -S bash '{{ .Path }}'"
-    script            = "scripts/install-base.sh"
+    execute_command = "{{ .Vars }} sudo -E -S bash '{{ .Path }}'"
+    script          = "scripts/install-base.sh"
   }
 
   provisioner "shell" {
-    inline = ["sudo /usr/bin/systemctl reboot"]
+    inline            = ["sudo /usr/bin/systemctl reboot"]
     expect_disconnect = true
-    pause_after = "30s"
-    skip_clean = true
+    pause_after       = "30s"
+    skip_clean        = true
   }
 
   provisioner "shell" {

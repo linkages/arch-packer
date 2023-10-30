@@ -4,7 +4,7 @@ variable "country" {
 }
 
 variable "use_local_mirror" {
-  type = string
+  type    = string
   default = "1"
 }
 
@@ -14,11 +14,11 @@ variable "headless" {
 }
 
 variable "iso_checksum" {
-  type    = string
+  type = string
 }
 
 variable "iso_url" {
-  type    = string
+  type = string
 }
 
 variable "ssh_timeout" {
@@ -33,21 +33,21 @@ variable "write_zeros" {
 
 # VM
 variable "cpus" {
-  type = number
+  type    = number
   default = 2
 }
 variable "ram" {
-  type = number
+  type    = number
   default = 2048
 }
 variable "network" {}
 variable "mac_address" {}
 variable "disk_size" {
-  type = number
+  type    = number
   default = 8192
 }
 variable "disk_thin_provisioned" {
-  type = bool
+  type    = bool
   default = true
 }
 variable "guest_os_type" {}
@@ -56,7 +56,10 @@ variable "vm_name" {}
 
 # Build
 variable "boot_command" {}
-variable "http_directory" {}
+variable "http_directory" {
+  type    = string
+  default = "./srv"
+}
 // variable "http_proxy" {}
 // variable "https_proxy" {}
 // variable "no_proxy" {}
@@ -65,20 +68,20 @@ variable "http_directory" {}
 # SSH
 variable "ssh_username" {}
 variable "ssh_password" {
-  type = string
-  default = ""
+  type      = string
+  default   = ""
   sensitive = true
 }
 # vCenter
 variable "vcenter_address" {}
 variable "vcenter_ignore_ssl" {
-  type = bool
+  type    = bool
   default = true
 }
 variable "vcenter_user" {}
 variable "vcenter_password" {
-  type = string
-  default = ""
+  type      = string
+  default   = ""
   sensitive = true
 }
 variable "vcenter_dc" {}
