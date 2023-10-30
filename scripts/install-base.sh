@@ -12,7 +12,7 @@ fi
 FQDN=${FQDN:-archie-template.benshoshan.com}
 KEYMAP='us'
 LANGUAGE='en_US.UTF-8'
-PASSWORD=$(/usr/bin/openssl passwd -crypt 'archieIsRoot!')
+PASSWORD=$(/usr/bin/openssl passwd -6 '${password}')
 TIMEZONE='UTC'
 
 CONFIG_SCRIPT='/usr/local/bin/arch-config.sh'
@@ -87,12 +87,19 @@ fi
 echo "Server = ${MIRROR}"> /etc/pacman.d/mirrorlist
 
 echo ">>>> install-base.sh: Bootstrapping the base installation.."
-/usr/bin/pacstrap ${TARGET_DIR} base base-devel linux
+/usr/bin/pacstrap ${TARGET_DIR} base linux openssh lvm2 grub net-tools linux-headers open-vm-tools nfs-utils cloud-init cloud-guest-utils
 
-# Need to install netctl as well: https://github.com/archlinux/arch-boxes/issues/70
-# Can be removed when Vagrant's Arch plugin will use systemd-networkd: https://github.com/hashicorp/vagrant/pull/11400
-echo ">>>> install-base.sh: Installing basic packages.."
-/usr/bin/arch-chroot ${TARGET_DIR} pacman -S --noconfirm gptfdisk openssh lvm2 grub dhcpcd netctl net-tools
+echo ">>>> install-base.sh: Disabling predictable network interface names..."
+/usr/bin/mkdir -p "${TARGET_DIR}/etc/systemd/network/99-default.link.d"
+/usr/bin/install --mode=0644 /root/traditional-naming.conf "${TARGET_DIR}/etc/systemd/network/99-default.link.d/traditional-naming.conf"
+#/usr/bin/ln -s /dev/null /etc/udev/rules.d/80-net-setup-link.rules
+
+echo ">>>> install-base.sh: Configuring systemd-network for wired DHCP..."
+/usr/bin/install --mode=0644 /root/20-wired.network "${TARGET_DIR}/etc/systemd/network/20-wired.network"
+
+# http://comments.gmane.org/gmane.linux.arch.general/48739
+#echo ">>>> install-base.sh: Adding workaround for shutdown race condition.."
+#/usr/bin/install --mode=0644 /root/poweroff.timer "${TARGET_DIR}/etc/systemd/system/poweroff.timer"
 
 echo ">>>> install-base.sh: Configuring grub.."
 /usr/bin/arch-chroot ${TARGET_DIR} grub-install --target=i386-pc ${DISK}
@@ -121,13 +128,16 @@ cat <<-EOF > "${TARGET_DIR}${CONFIG_SCRIPT}"
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Creating initramfs.."
   /usr/bin/mkinitcpio -p linux
 
-  echo ">>>> ${CONFIG_SCRIPT_SHORT}: Setting root pasword.."
+  echo ">>>> ${CONFIG_SCRIPT_SHORT}: Setting root pasword...[${PASSWORD}]"
+  echo ">>>> ${CONFIG_SCRIPT_SHORT}: Should have set password to: [${password}]"
   /usr/bin/usermod --password ${PASSWORD} root
+
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Configuring network.."
-  # Disable systemd Predictable Network Interface Names and revert to traditional interface names
-  # https://wiki.archlinux.org/index.php/Network_configuration#Revert_to_traditional_interface_names
-  /usr/bin/ln -s /dev/null /etc/udev/rules.d/80-net-setup-link.rules
-  /usr/bin/systemctl enable dhcpcd@eth0.service
+  /usr/bin/systemctl enable systemd-networkd.service
+  /usr/bin/systemctl enable systemd-resolved.service
+
+  ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Configuring sshd.."
   /usr/bin/sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
   /usr/bin/systemctl enable sshd.service
@@ -140,17 +150,8 @@ cat <<-EOF > "${TARGET_DIR}${CONFIG_SCRIPT}"
   echo 'archie ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/10_archie
   /usr/bin/chmod 0440 /etc/sudoers.d/10_archie
 
-  echo "Getting the status of the archie user before"
-  /usr/bin/passwd -S archie
-
   echo "archie:archieIsRoot!" | /usr/bin/chpasswd 
-
-  echo "Getting the status of the archie user after"
-  /usr/bin/passwd -S archie
-
-  echo ">>>> ${CONFIG_SCRIPT_SHORT}: Installing Open-VM-Tools and NFS utilities.."
-  /usr/bin/pacman -S --noconfirm linux-headers open-vm-tools nfs-utils cloud-init cloud-guest-utils net-tools
-
+  
   echo ">>>> ${CONFIG_SCRIPT_SHORT}: Enabling Open-VM-Tools service.."
   /usr/bin/systemctl enable vmtoolsd.service
 
@@ -162,18 +163,11 @@ cat <<-EOF > "${TARGET_DIR}${CONFIG_SCRIPT}"
   /usr/bin/systemctl enable cloud-init.service
   /usr/bin/systemctl enable cloud-config.service
   /usr/bin/systemctl enable cloud-final.service
-
-  echo ">>>> ${CONFIG_SCRIPT_SHORT}: Cleaning up.."
-  /usr/bin/pacman -Rcns --noconfirm gptfdisk
 EOF
 
 echo ">>>> install-base.sh: Entering chroot and configuring system.."
 /usr/bin/arch-chroot ${TARGET_DIR} ${CONFIG_SCRIPT}
 rm "${TARGET_DIR}${CONFIG_SCRIPT}"
-
-# http://comments.gmane.org/gmane.linux.arch.general/48739
-echo ">>>> install-base.sh: Adding workaround for shutdown race condition.."
-/usr/bin/install --mode=0644 /root/poweroff.timer "${TARGET_DIR}/etc/systemd/system/poweroff.timer"
 
 echo ">>>> install-base.sh: Cleaning up cloud-init"
 /usr/bin/arch-chroot ${TARGET_DIR} cloud-init clean
