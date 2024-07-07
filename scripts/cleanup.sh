@@ -5,8 +5,6 @@ echo ">>>> cleanup.sh: Cleaning pacman cache.."
 echo ">>>> cleanup.sh: Cleaning pacman cache.." >> /root/cleanup.log
 /usr/bin/pacman -Scc --noconfirm
 
-/usr/bin/systemctl disable dhcpcd@eth0.service
-
 # Remove archie
 #echo ">>>> cleanup.sh: Removing the archie user and group"
 #/usr/bin/userdel -r archie
@@ -24,5 +22,3 @@ if [[ $WRITE_ZEROS == "true" ]]; then
     #  /usr/bin/rm -f "$zerofile"
     /usr/bin/sync
 fi
-
-echo ">>>> cleanup.sh: Cleaning up any cloud-init stuff"
