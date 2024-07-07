@@ -46,7 +46,7 @@ source "vsphere-iso" "arch" {
   }
 
   password               = "${var.vcenter_password}"
-  shutdown_command       = "sudo systemctl start poweroff.timer"
+  shutdown_command       = "sudo systemctl start systemd-poweroff.service"
   ssh_handshake_attempts = "200"
   ssh_password           = "${var.ssh_password}"
   ssh_port               = 22
@@ -73,6 +73,7 @@ build {
       "use_local_mirror=${var.use_local_mirror}",
       "password=${var.ssh_password}"
     ]
+    valid_exit_codes = [0, 2300218]
     execute_command = "{{ .Vars }} sudo -E -S bash '{{ .Path }}'"
     script          = "scripts/install-base.sh"
   }
