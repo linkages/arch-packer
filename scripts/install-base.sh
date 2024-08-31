@@ -33,7 +33,7 @@ echo ">>>> install-base.sh: Creating /root partition on ${DISK}.."
 /usr/bin/sgdisk --new=1:2048:+1M ${DISK}
 /usr/bin/sgdisk --typecode=1:21686148-6449-6E6F-744E-656564454649 ${DISK}
 
-/usr/bin/sgdisk --new=2:0:+256M ${DISK}
+/usr/bin/sgdisk --new=2:0:+512M ${DISK}
 /usr/bin/sgdisk --attributes=2:set:2 ${DISK}
 /usr/bin/sgdisk --typecode=2:8300 ${DISK}
 /usr/bin/mkfs.ext4 -O ^64bit -F -m 0 -q -L boot ${DISK}2
